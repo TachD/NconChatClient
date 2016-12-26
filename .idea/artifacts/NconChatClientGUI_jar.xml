@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="NconChatClientGUI:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/NconChatClientGUI_jar</output-path>
+    <root id="archive" name="NconChatClientGUI.jar">
+      <element id="module-output" name="NconChatClientGUI" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/src/libs/NconChatCientAPI.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

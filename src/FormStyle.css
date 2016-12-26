@@ -1,0 +1,11 @@
+.background {
+    -fx-font-family: "DeusEx";
+}
+
+.Header_1 {
+    -fx-font-size: 30px;
+}
+
+.Header_2 {
+    -fx-font-size: 20px;
+}
