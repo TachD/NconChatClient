@@ -66,6 +66,7 @@ public class Controller {
 
     @FXML
     private SplitPane RegAuthPane;
+
     // Recovery Data
     @FXML
     private Pane RecoveryPane;
@@ -145,8 +146,8 @@ public class Controller {
 
     @FXML
     private Label LDayofBirthday;
-    ////////////////////////////
-    private String getMD5String(String SourceString) throws NoSuchAlgorithmException{
+
+    private String getEncryptedString(String SourceString) throws NoSuchAlgorithmException {
         final MessageDigest MD = MessageDigest.getInstance("MD5");
 
         MD.reset();
@@ -203,7 +204,7 @@ public class Controller {
 
             OStream.writeObject(TFogin.getText());
             try {
-                OStream.writeObject(getMD5String(PFPass.getText()));
+                OStream.writeObject(getEncryptedString(PFPass.getText()));
             } catch (Exception Ex) {
                 System.out.println("");
             }
@@ -405,7 +406,7 @@ public class Controller {
         StatusReg.setText("");
 
         try {
-            if (!validMD5String.equals(getMD5String(TFieldValidCode.getText()))) {
+            if (!validMD5String.equals(getEncryptedString(TFieldValidCode.getText()))) {
                 StatusReg.setText("Incorrect code!");
                 return;
             }
@@ -425,7 +426,7 @@ public class Controller {
             String CryptPass;
 
             try {
-                CryptPass = getMD5String(RegPFieldOne.getText());
+                CryptPass = getEncryptedString(RegPFieldOne.getText());
 
             } catch (NoSuchAlgorithmException NSAEx) {
                 System.out.println("Password encryption error! " + NSAEx.getMessage());
