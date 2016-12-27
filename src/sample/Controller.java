@@ -129,7 +129,8 @@ public class Controller {
     @FXML
     private PasswordField PFPass;
 
-    @FXML Label LValidate;
+    @FXML
+    private Label LValidate;
 
     // Account data
     @FXML
@@ -148,12 +149,12 @@ public class Controller {
     private Label LDayofBirthday;
 
     private String getEncryptedString(String SourceString) throws NoSuchAlgorithmException {
-        final MessageDigest MD = MessageDigest.getInstance("MD5");
+        final MessageDigest MD = MessageDigest.getInstance("SHA-256");
 
         MD.reset();
         MD.update(SourceString.getBytes(Charset.forName("UTF8")));
 
-        return String.format("%032x", new BigInteger(1, MD.digest()));
+        return String.format("%064x", new BigInteger(1, MD.digest()));
     }
 
     @FXML
