@@ -7,6 +7,10 @@ import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -18,7 +22,7 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
-import java.util.Date;
+import java.time.LocalTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,6 +34,9 @@ public class Controller {
     private volatile boolean NeedClose;
 
     private Socket MainSocket;
+
+    @FXML
+    private Button ConnDisconn;
 
     @FXML
     private Tab PaneRegAuth;
@@ -148,6 +155,24 @@ public class Controller {
     @FXML
     private Label LDayofBirthday;
 
+    private String TimeLog() {
+        LocalTime NowTime = LocalTime.now();
+
+        String TimeLogMessage = "[";
+
+        if (NowTime.getHour() < 10)
+            TimeLogMessage += "0";
+
+        TimeLogMessage += NowTime.getHour() + ":";
+
+        if (NowTime.getMinute() < 10)
+            TimeLogMessage += "0";
+
+        TimeLogMessage += NowTime.getMinute() + "] ";
+
+        return TimeLogMessage;
+    }
+
     private String getEncryptedString(String SourceString) throws NoSuchAlgorithmException {
         final MessageDigest MD = MessageDigest.getInstance("SHA-256");
 
@@ -223,7 +248,7 @@ public class Controller {
 
             try {
                 if (Integer.valueOf(LoginData) == 0)
-                    LValidate.setText("Uncorrected Password and/or Login. Try again!");
+                    LValidate.setText("Uncorrected Password and/or Login!");
             } catch (NumberFormatException NFEx) {
                 try {
 
@@ -296,7 +321,7 @@ public class Controller {
         int Year;
 
         try {
-            Year = new Date().getYear() - RegDateofBirthday.getValue().getYear();
+            Year = LocalDate.now().getYear() - RegDateofBirthday.getValue().getYear();
         } catch (Exception Ex) {
             return;
         }
@@ -486,7 +511,7 @@ public class Controller {
     @FXML
     private void Logout() {
         if (StatusOn.isVisible())
-            CloseCLient();
+            CloseSession();
 
         LNickname.setText("");
         LEmail.setText("");
@@ -543,7 +568,6 @@ public class Controller {
         }
     }
 
-    @FXML
     private void GetConnect() {
         ConnectionToServer();
 
@@ -565,41 +589,60 @@ public class Controller {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Clip clip = null;
+
                 try {
+
+                    clip = AudioSystem.getClip();
+                    AudioInputStream AIS = AudioSystem.getAudioInputStream(new File("src/source/sounds/notification.wav"));
+                    clip.open(AIS);
 
                     while (true) {
 
-                        if (NeedClose) {
-                            StatusOn.setVisible(false);
-                            StatusOff.setVisible(true);
-
+                        if (NeedClose)
                             throw new IOException();
-                        }
 
-                        Date NowDate = new Date();
-
-                        String Message = "[" + NowDate.getHours()   + ":"
-                                             + NowDate.getMinutes() + "] ";
+                        String Message = TimeLog() + " ";
 
                         Message += ClientObj.receive() + "\n\n";
 
                         TAreaMain.appendText(Message);
+
+                        clip.start();
+                        clip.setFramePosition(0);
                     }
 
                 } catch (Exception Ex) {
                     StatusOn.setVisible(false);
                     StatusOff.setVisible(true);
-                    /////////////////////////////////////////
-                    System.out.println("Message receive error! " + Ex);
+
+                    if (clip != null)
+                        clip.drain();
+
+                    System.out.println(Ex.getMessage());
                     ClientObj.CloseStream();
                 }
             }
         }).start();
     }
 
-    @FXML
-    private void CloseCLient() {
+    private void CloseSession() {
         NeedClose = true;
+    }
+
+    @FXML
+    private void ConnDisconn() {
+        if (ConnDisconn.getText().equals("Connect")) {
+            GetConnect();
+
+            ConnDisconn.setText("Disconnect");
+        }
+        else {
+            CloseSession();
+            SendMessage();
+
+            ConnDisconn.setText("Connect");
+        }
     }
 
     @FXML
@@ -645,41 +688,35 @@ public class Controller {
 
         ToAutorisation.setOnMouseExited(event -> ToAutorisation.setUnderline(false));
 
-        ToAutorisation.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                RecoveryPane.setVisible(false);
-                RecoveryPane.setDisable(true);
+        ToAutorisation.setOnMouseClicked(event -> {
+            RecoveryPane.setVisible(false);
+            RecoveryPane.setDisable(true);
 
-                TFRecovery.setText("");
-                LRecoveryStatus.setText("");
-            }
+            TFRecovery.setText("");
+            LRecoveryStatus.setText("");
         });
     }
 
     @FXML
     private void SendMessage() {
         try {
-            if (NeedClose) {
-                System.out.println("No connection");
-                ClientObj.CloseStream();
-
-                StatusOn.setVisible(false);
-                StatusOff.setVisible(true);
-            }
+            if (NeedClose)
+                throw new IOException();
 
             if (ClientObj != null)
                 if (TAreaMessage.getText().length() != 0)
                     if(ClientObj.isConnected()) {
-                        Date NowDate = new Date();
 
-                        String Message = "[" + NowDate.getHours() + ":" + NowDate.getMinutes() + "] ";
+                        String Message = TimeLog() + " ";
                         Message += LNickname.getText() + ": " + TAreaMessage.getText() + "\n\n";
                         TAreaMain.appendText(Message);
 
                         ClientObj.send(LNickname.getText() + ": " + TAreaMessage.getText());
                     }
         } catch (IOException IOEx) {
+            StatusOn.setVisible(false);
+            StatusOff.setVisible(true);
+
             ClientObj.CloseStream();
             System.out.println("Message sending error! " + IOEx);
             return;
