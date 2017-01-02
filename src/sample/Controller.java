@@ -35,8 +35,7 @@ public class Controller {
 
     private Socket MainSocket;
 
-    @FXML
-    private Button ConnDisconn;
+    private boolean Connectflag;
 
     @FXML
     private Tab PaneRegAuth;
@@ -600,7 +599,7 @@ public class Controller {
                     while (true) {
 
                         if (NeedClose)
-                            throw new IOException();
+                            throw new Exception();
 
                         String Message = TimeLog() + " ";
 
@@ -619,8 +618,14 @@ public class Controller {
                     if (clip != null)
                         clip.drain();
 
-                    System.out.println(Ex.getMessage());
-                    ClientObj.CloseStream();
+                    System.out.println((Ex.getMessage() == null)?"Session completed!":Ex.getMessage());
+
+                    Connectflag = true;
+
+                    if (ClientObj != null) {
+                        ClientObj.CloseStream();
+                        ClientObj = null;
+                    }
                 }
             }
         }).start();
@@ -632,21 +637,23 @@ public class Controller {
 
     @FXML
     private void ConnDisconn() {
-        if (ConnDisconn.getText().equals("Connect")) {
+        if (Connectflag) {
             GetConnect();
 
-            ConnDisconn.setText("Disconnect");
+            Connectflag = false;
         }
         else {
             CloseSession();
             SendMessage();
 
-            ConnDisconn.setText("Connect");
+            Connectflag = true;
         }
     }
 
     @FXML
     private void initialize() throws Exception {
+        Connectflag = true;
+
         StatusOn.setVisible(false);
         StatusOff.setVisible(true);
 
@@ -717,7 +724,11 @@ public class Controller {
             StatusOn.setVisible(false);
             StatusOff.setVisible(true);
 
-            ClientObj.CloseStream();
+            if (ClientObj != null) {
+                ClientObj.CloseStream();
+                ClientObj = null;
+            }
+
             System.out.println("Message sending error! " + IOEx);
             return;
     }
