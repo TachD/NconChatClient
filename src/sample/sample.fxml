@@ -140,6 +140,16 @@
                         </AnchorPane>
                      </content>
                   </Tab>
+                  <Tab text="Setting">
+                    <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <TextField fx:id="HostNameField" layoutX="151.0" layoutY="20.0" prefHeight="29.0" prefWidth="447.0" text="DESKTOP-34GG5QJ" />
+                              <Label layoutX="14.0" layoutY="25.0" text="Host Name:" />
+                           </children>
+                        </AnchorPane>
+                    </content>
+                  </Tab>
               </tabs>
             </TabPane>
          </children>

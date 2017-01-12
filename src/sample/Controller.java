@@ -37,6 +37,11 @@ public class Controller {
 
     private boolean Connectflag;
 
+    private String HostName = null;
+
+    @FXML
+    private TextField HostNameField;
+
     @FXML
     private Tab PaneRegAuth;
 
@@ -154,6 +159,10 @@ public class Controller {
     @FXML
     private Label LDayofBirthday;
 
+    /**
+     *
+     * @return time in "[HH.MM] " format
+     */
     private String TimeLog() {
         LocalTime NowTime = LocalTime.now();
 
@@ -184,13 +193,13 @@ public class Controller {
     @FXML
     private void Recovery() {
         try {
-            MainSocket = new Socket(InetAddress.getByName("DESKTOP-34GG5QJ"), 10001);
+            MainSocket = new Socket(HostName, 10001);
 
             ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
 
             OStream.writeObject(-4);
 
-            OStream.writeObject(TFRecovery.getText());//
+            OStream.writeObject(TFRecovery.getText());
 
             ObjectInputStream IStream = new ObjectInputStream(MainSocket.getInputStream());
 
@@ -216,15 +225,18 @@ public class Controller {
 
     @FXML
     private void Autorisation() {
+        HostName = HostNameField.getText();
+        HostNameField.setDisable(true);
+
         LValidate.setText("");
 
         try {
 
-            MainSocket = new Socket(InetAddress.getByName("DESKTOP-34GG5QJ"), 10001);
+            MainSocket = new Socket(HostName, 10001);
 
             ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
 
-            // need regexp!
+
             OStream.writeObject(-1);
 
             OStream.writeObject(TFogin.getText());
@@ -234,7 +246,6 @@ public class Controller {
                 System.out.println("");
             }
 
-            // sending...
             String LoginData;
 
             ObjectInputStream IStream = new ObjectInputStream(MainSocket.getInputStream());
@@ -332,7 +343,7 @@ public class Controller {
         try {
 
 
-            MainSocket = new Socket(InetAddress.getByName("DESKTOP-34GG5QJ"), 10001);
+            MainSocket = new Socket(HostName, 10001);
 
             ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
 
@@ -360,22 +371,23 @@ public class Controller {
                         StatusReg.setText("Email is already in use!");
 
             } catch (NumberFormatException NFEx) {
-                    validMD5String = RegData;
+                validMD5String = RegData;
 
-                    RegNickname.setEditable(false);
-                    RegPFieldOne.setEditable(false);
-                    RegPFieldTwo.setEditable(false);
-                    RegEmail.setEditable(false);
-                    RegFName.setEditable(false);
-                    RegDateofBirthday.setEditable(false);
-                    RegLname.setEditable(false);
-                    BSignUp.setDisable(true);
+                RegNickname.setEditable(false);
+                RegPFieldOne.setEditable(false);
+                RegPFieldTwo.setEditable(false);
+                RegEmail.setEditable(false);
+                RegFName.setEditable(false);
+                RegDateofBirthday.setEditable(false);
+                RegLname.setEditable(false);
+                BSignUp.setDisable(true);
 
 
-                    ValidLabel.setVisible(true);
-                    AcceptRegistration.setVisible(true);
-                    TFieldValidCode.setVisible(true);
-                    CancelRegistration.setVisible(true);
+                ValidLabel.setVisible(true);
+                AcceptRegistration.setVisible(true);
+                TFieldValidCode.setVisible(true);
+                CancelRegistration.setVisible(true);
+
                 StatusReg.setText("Check the mailbox!");
 
             }
@@ -442,7 +454,7 @@ public class Controller {
 
         try {
 
-            MainSocket = new Socket(InetAddress.getByName("DESKTOP-34GG5QJ"), 10001);
+            MainSocket = new Socket(HostName, 10001);
 
             ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
 
@@ -508,12 +520,12 @@ public class Controller {
     }
 
     @FXML
-    private void Logout() {
+    public void Logout() {
         if (StatusOn.isVisible())
             CloseSession();
 
         try {
-            MainSocket = new Socket(InetAddress.getByName("DESKTOP-34GG5QJ"), 10001);
+            MainSocket = new Socket(HostName, 10001);
         } catch (UnknownHostException UNEx ) {
             System.out.println("Not found server! " + UNEx.getMessage());
         } catch (IOException IOEx) {
@@ -542,6 +554,9 @@ public class Controller {
         PaneAccount.setDisable(true);
         PaneMessenger.setDisable(true);
         PaneRegAuth.setDisable(false);
+
+        HostName = null;
+        HostNameField.setDisable(false);
     }
 
     private boolean ConnectionToServer() {
@@ -558,7 +573,7 @@ public class Controller {
         if (Port  > 10001 &&
             Port <= 65000) {
             try {
-                MainSocket = new Socket(InetAddress.getByName("DESKTOP-34GG5QJ"), 10001);
+                MainSocket = new Socket(HostName, 10001);
 
                 ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
 
@@ -581,7 +596,7 @@ public class Controller {
 
     private boolean Prepare() {
         try {
-            ClientObj = new NcoNClient(InetAddress.getByName("DESKTOP-34GG5QJ"), Integer.valueOf(TFieldPORT.getText()));
+            ClientObj = new NcoNClient(InetAddress.getByName(HostName), Integer.valueOf(TFieldPORT.getText()));
             return true;
         } catch (UnknownHostException UHEx) {
             System.out.println("Unknown host error! " + UHEx);
@@ -673,7 +688,8 @@ public class Controller {
     }
 
     @FXML
-    private void initialize() throws Exception {
+    private void initialize()
+            throws Exception {
         Connectflag = true;
 
         StatusOn.setVisible(false);
