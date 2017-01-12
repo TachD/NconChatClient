@@ -447,7 +447,7 @@ public class Controller {
             ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
 
             OStream.writeObject(-3);
-            ///////////////////////
+
             String CryptPass;
 
             try {
@@ -512,6 +512,27 @@ public class Controller {
         if (StatusOn.isVisible())
             CloseSession();
 
+        try {
+            MainSocket = new Socket(InetAddress.getByName("DESKTOP-34GG5QJ"), 10001);
+        } catch (UnknownHostException UNEx ) {
+            System.out.println("Not found server! " + UNEx.getMessage());
+        } catch (IOException IOEx) {
+            System.out.println(IOEx.getMessage());
+        }
+
+        try {
+            ObjectOutputStream OS = new ObjectOutputStream(MainSocket.getOutputStream());
+
+            OS.writeObject(-5);
+
+            OS.writeObject(LNickname.getText());
+
+            OS.close();
+            MainSocket.close();
+        } catch (IOException IOEx) {
+            System.out.println(IOEx.getMessage());
+        }
+
         LNickname.setText("");
         LEmail.setText("");
         LFirstname.setText("");
@@ -550,6 +571,7 @@ public class Controller {
                 System.out.println("Not found server! " + Ex);
                 return false;
             }
+
             return true;
         }
         else
