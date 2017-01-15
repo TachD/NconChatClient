@@ -33,8 +33,6 @@ public class Controller {
 
     private volatile boolean NeedClose;
 
-    private Socket MainSocket;
-
     private boolean Connectflag;
 
     private String HostName = null;
@@ -190,22 +188,67 @@ public class Controller {
         return String.format("%064x", new BigInteger(1, MD.digest()));
     }
 
-    @FXML
-    private void Recovery() {
+    private void MainMethod(int ServiceID) {
+        Socket MainSocket = null;
+        ObjectOutputStream OS = null;
+        ObjectInputStream IS = null;
+
         try {
             MainSocket = new Socket(HostName, 10001);
 
-            ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
+            OS = new ObjectOutputStream(MainSocket.getOutputStream());
 
-            OStream.writeObject(-4);
+            OS.writeObject(ServiceID);
 
-            OStream.writeObject(TFRecovery.getText());
+            if (ServiceID != -5)
+                IS = new ObjectInputStream(MainSocket.getInputStream());
 
-            ObjectInputStream IStream = new ObjectInputStream(MainSocket.getInputStream());
+            switch (ServiceID) {
+                case -1:
+                    Auth(OS, IS);
+                    break;
+                case -2:
+                    Validation(OS, IS);
+                    break;
+                case -3:
+                    Registration(OS, IS);
+                    break;
+                case -4:
+                    Recovery(OS, IS);
+                    break;
+                case -5:
+                    Logout(OS);
+                    break;
+                default:
+                    ConnDisconn();
+            }
+        } catch (IOException IOEx) {
+            System.out.println(IOEx.getMessage());
+            return;
+        } finally {
+            try {
+                if (OS != null)
+                    OS.close();
+
+                if (IS != null)
+                    IS.close();
+
+                if (MainSocket != null || !MainSocket.isConnected())
+                    MainSocket.close();
+            } catch (IOException IOEx) {
+                System.out.println(IOEx.getMessage());
+                return;
+            }
+        }
+    }
+
+    private void Recovery(ObjectOutputStream OS, ObjectInputStream IS) {
+        try {
+            OS.writeObject(TFRecovery.getText());
 
             String RecoveryData;
             try {
-                RecoveryData = IStream.readObject().toString();
+                RecoveryData = IS.readObject().toString();
             } catch (Exception Ex) {
                 return;
             }
@@ -213,45 +256,30 @@ public class Controller {
             LRecoveryStatus.setText((Integer.valueOf(RecoveryData) == -1)?
                     "Unknown email!":"Check the mailbox!");
 
-
-            OStream.close();
-            IStream.close();
-
-            MainSocket.close();
         } catch (IOException IOEx) {
             System.out.println("Server not found! " + IOEx);
         }
     }
 
-    @FXML
-    private void Autorisation() {
+    private void Auth(ObjectOutputStream OS, ObjectInputStream IS) {
         HostName = HostNameField.getText();
         HostNameField.setDisable(true);
 
         LValidate.setText("");
 
         try {
+            OS.writeObject(TFogin.getText());
 
-            MainSocket = new Socket(HostName, 10001);
-
-            ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
-
-
-            OStream.writeObject(-1);
-
-            OStream.writeObject(TFogin.getText());
             try {
-                OStream.writeObject(getEncryptedString(PFPass.getText()));
+                OS.writeObject(getEncryptedString(PFPass.getText()));
             } catch (Exception Ex) {
                 System.out.println("");
             }
 
             String LoginData;
 
-            ObjectInputStream IStream = new ObjectInputStream(MainSocket.getInputStream());
-
             try {
-                LoginData = IStream.readObject().toString();
+                LoginData = IS.readObject().toString();
             } catch (Exception Ex) {
                 return;
             }
@@ -263,10 +291,10 @@ public class Controller {
                 try {
 
                     LNickname.setText(LoginData);
-                    LEmail.setText(IStream.readObject().toString());
-                    LFirstname.setText(IStream.readObject().toString());
-                    LDayofBirthday.setText(IStream.readObject().toString());
-                    LLastname.setText(IStream.readObject().toString());
+                    LEmail.setText(IS.readObject().toString());
+                    LFirstname.setText(IS.readObject().toString());
+                    LDayofBirthday.setText(IS.readObject().toString());
+                    LLastname.setText(IS.readObject().toString());
 
 
                     PaneAccount.setDisable(false);
@@ -280,17 +308,12 @@ public class Controller {
                 }
             }
 
-            OStream.close();
-            IStream.close();
-
-            MainSocket.close();
         } catch (IOException IOEx) {
             System.out.println("Not found server! " + IOEx);
         }
     }
 
-    @FXML
-    private void Registration() {
+    private void Validation(ObjectOutputStream OS, ObjectInputStream IS) {
         StatusReg.setText("");
 
         if (RegNickname.getText().length() < 3) {
@@ -341,24 +364,14 @@ public class Controller {
             return;
         }
         try {
-
-
-            MainSocket = new Socket(HostName, 10001);
-
-            ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
-
-            OStream.writeObject(-2);
-
-            OStream.writeObject(RegNickname.getText());
-            OStream.writeObject(RegFName.getText());
-            OStream.writeObject(RegLname.getText());
-            OStream.writeObject(RegEmail.getText());
-
-            ObjectInputStream IStream = new ObjectInputStream(MainSocket.getInputStream());
+            OS.writeObject(RegNickname.getText());
+            OS.writeObject(RegFName.getText());
+            OS.writeObject(RegLname.getText());
+            OS.writeObject(RegEmail.getText());
 
             String RegData;
             try {
-                 RegData = IStream.readObject().toString();
+                 RegData = IS.readObject().toString();
             } catch (Exception Ex) {
                 return;
             }
@@ -392,14 +405,127 @@ public class Controller {
 
             }
 
-            OStream.close();
-            IStream.close();
-
-            MainSocket.close();
         } catch (IOException IOEx) {
             System.out.println("Server not found! " + IOEx);
         }
     }
+
+    private void Registration(ObjectOutputStream OS, ObjectInputStream IS) {
+        StatusReg.setText("");
+
+        try {
+            if (!validMD5String.equals(getEncryptedString(TFieldValidCode.getText()))) {
+                StatusReg.setText("Incorrect code!");
+                return;
+            }
+        } catch (NoSuchAlgorithmException NSAEx) {
+            System.out.println("Validation error!");
+            return;
+        }
+
+        try {
+            String CryptPass;
+
+            try {
+                CryptPass = getEncryptedString(RegPFieldOne.getText());
+
+            } catch (NoSuchAlgorithmException NSAEx) {
+                System.out.println("Password encryption error! " + NSAEx.getMessage());
+                return;
+            }
+            LocalDate Temp = RegDateofBirthday.getValue();
+
+            String DateofBirth = new String();
+
+            if (Temp.getDayOfMonth() < 10)
+                DateofBirth += 0;
+            DateofBirth += Temp.getDayOfMonth() + ".";
+
+            if (Temp.getMonthValue() < 10)
+                DateofBirth += 0;
+            DateofBirth += Temp.getMonthValue() + "." + Temp.getYear();
+
+            OS.writeObject(RegNickname.getText());
+            OS.writeObject(CryptPass);
+            OS.writeObject(RegFName.getText());
+            OS.writeObject(RegLname.getText());
+            OS.writeObject(RegEmail.getText());
+            OS.writeObject(DateofBirth);
+            ////////
+
+            String LoginData;
+
+            try {
+                LoginData = IS.readObject().toString();
+            } catch (Exception Ex) {
+                return;
+            }
+
+                if (Integer.valueOf(LoginData) == 0)
+                    StatusReg.setText("Account not created!");
+                else {
+                    StatusReg.setText("Account created!");
+
+                    CancelRegistration();
+                    RegAuthPane.setDividerPositions(0);
+                }
+
+        } catch (IOException IOEx) {
+            System.out.println("Not found server! " + IOEx);
+        }
+    }
+
+    public void Logout(ObjectOutputStream OS) {
+        if (StatusOn.isVisible())
+            CloseSession();
+
+        try {
+            OS.writeObject(LNickname.getText());
+
+            OS.close();
+        } catch (IOException IOEx) {
+            System.out.println(IOEx.getMessage());
+        }
+
+        LNickname.setText("");
+        LEmail.setText("");
+        LFirstname.setText("");
+        LDayofBirthday.setText("");
+        LLastname.setText("");
+
+        PaneAccount.setDisable(true);
+        PaneMessenger.setDisable(true);
+        PaneRegAuth.setDisable(false);
+
+        HostName = null;
+        HostNameField.setDisable(false);
+    }
+
+    @FXML
+    private void btnAuth() {
+        MainMethod(-1);
+    }
+
+    @FXML
+    private void btnValid() {
+        MainMethod(-2);
+    }
+
+    @FXML
+    private void btnReg() {
+        MainMethod(-3);
+    }
+
+    @FXML
+    private void btnRec() {
+        MainMethod(-4);
+    }
+
+    @FXML
+    private void btnLogout() {
+        MainMethod(-5);
+    }
+
 
     @FXML
     private void CancelRegistration() {
@@ -438,130 +564,9 @@ public class Controller {
         CancelRegistration.setVisible(false);
     }
 
-    @FXML
-    private void AcceptRegistration() {
-        StatusReg.setText("");
-
-        try {
-            if (!validMD5String.equals(getEncryptedString(TFieldValidCode.getText()))) {
-                StatusReg.setText("Incorrect code!");
-                return;
-            }
-        } catch (NoSuchAlgorithmException NSAEx) {
-            System.out.println("Validation error!");
-            return;
-        }
-
-        try {
-
-            MainSocket = new Socket(HostName, 10001);
-
-            ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
-
-            OStream.writeObject(-3);
-
-            String CryptPass;
-
-            try {
-                CryptPass = getEncryptedString(RegPFieldOne.getText());
-
-            } catch (NoSuchAlgorithmException NSAEx) {
-                System.out.println("Password encryption error! " + NSAEx.getMessage());
-                return;
-            }
-            LocalDate Temp = RegDateofBirthday.getValue();
-
-            String DateofBirth = new String();
-
-            if (Temp.getDayOfMonth() < 10)
-                DateofBirth += 0;
-            DateofBirth += Temp.getDayOfMonth() + ".";
-
-            if (Temp.getMonthValue() < 10)
-                DateofBirth += 0;
-            DateofBirth += Temp.getMonthValue() + "." + Temp.getYear();
-
-            OStream.writeObject(RegNickname.getText());
-            OStream.writeObject(CryptPass);
-            OStream.writeObject(RegFName.getText());
-            OStream.writeObject(RegLname.getText());
-            OStream.writeObject(RegEmail.getText());
-            OStream.writeObject(DateofBirth);
-            ////////
-
-            String LoginData;
-
-            ObjectInputStream IStream = new ObjectInputStream(MainSocket.getInputStream());
-
-            try {
-                LoginData = IStream.readObject().toString();
-            } catch (Exception Ex) {
-                return;
-            }
-
-                if (Integer.valueOf(LoginData) == 0)
-                    StatusReg.setText("Account not created!");
-                else {
-                    StatusReg.setText("Account created!");
-
-                    CancelRegistration();
-                    RegAuthPane.setDividerPositions(0);
-                }
-
-
-
-            OStream.close();
-            IStream.close();
-
-            MainSocket.close();
-        } catch (IOException IOEx) {
-            System.out.println("Not found server! " + IOEx);
-        }
-    }
-
-    @FXML
-    public void Logout() {
-        if (StatusOn.isVisible())
-            CloseSession();
-
-        try {
-            MainSocket = new Socket(HostName, 10001);
-        } catch (UnknownHostException UNEx ) {
-            System.out.println("Not found server! " + UNEx.getMessage());
-        } catch (IOException IOEx) {
-            System.out.println(IOEx.getMessage());
-        }
-
-        try {
-            ObjectOutputStream OS = new ObjectOutputStream(MainSocket.getOutputStream());
-
-            OS.writeObject(-5);
-
-            OS.writeObject(LNickname.getText());
-
-            OS.close();
-            MainSocket.close();
-        } catch (IOException IOEx) {
-            System.out.println(IOEx.getMessage());
-        }
-
-        LNickname.setText("");
-        LEmail.setText("");
-        LFirstname.setText("");
-        LDayofBirthday.setText("");
-        LLastname.setText("");
-
-        PaneAccount.setDisable(true);
-        PaneMessenger.setDisable(true);
-        PaneRegAuth.setDisable(false);
-
-        HostName = null;
-        HostNameField.setDisable(false);
-    }
-
     private boolean ConnectionToServer() {
 
-        int Port = 0;
+        int Port;
 
         try {
             Port = Integer.valueOf(TFieldPORT.getText());
@@ -573,7 +578,7 @@ public class Controller {
         if (Port  > 10001 &&
             Port <= 65000) {
             try {
-                MainSocket = new Socket(HostName, 10001);
+                Socket MainSocket = new Socket(HostName, 10001);
 
                 ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
 
