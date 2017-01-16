@@ -2,7 +2,9 @@ package sample;
 
 import edu.BarSU.Ncon.Chat.Client.NcoNClient;
 import javafx.event.EventHandler;
+
 import javafx.fxml.FXML;
+
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -10,17 +12,28 @@ import javafx.scene.layout.Pane;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+
 import java.math.BigInteger;
-import java.net.*;
+
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.net.InetAddress;
+
 import java.nio.charset.Charset;
+
 import java.security.MessageDigest;
+
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -572,47 +585,15 @@ public class Controller {
         TFieldValidCode.setText("");
         CancelRegistration.setVisible(false);
     }
-    /*
-    private boolean ConnectionToServer(ObjectOutputStream OS) {
-        int Port;
 
-        try {
-            Port = Integer.valueOf(TFieldPORT.getText());
-        } catch (Exception Ex) {
-            System.out.println("Port data uncorrected!");
-            return false;
-        }
-
-        if (Port  > 10001 &&
-            Port <= 65000) {
-            try { // delete
-                OS.writeObject(Port);
-            } catch (Exception Ex) {
-                System.out.println("Not found server! " + Ex);
-                return false;
-            }
-
-            return true;
-        }
-        else
-            return false;
-
-    }
-    */
-    private boolean Prepare() {
-        try {
-            ClientObj = new NcoNClient(InetAddress.getByName(HostName), Integer.valueOf(TFieldPORT.getText()));
-            return true;
-        } catch (UnknownHostException UHEx) {
-            System.out.println("Unknown host error! " + UHEx);
-            return false;
-        }
-    }
 
     private void GetConnect() {
-        //ConnectionToServer(OS); // edit or delete ?
-        if (!Prepare())
+        try {
+            ClientObj = new NcoNClient(InetAddress.getByName(HostName), Integer.valueOf(TFieldPORT.getText()));
+        } catch (UnknownHostException UHEx) {
+            System.out.println("Unknown host error! " + UHEx);
             return;
+        }
 
         NeedClose = false;
 
