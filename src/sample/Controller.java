@@ -15,9 +15,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -193,14 +191,23 @@ public class Controller {
         ObjectOutputStream OS = null;
         ObjectInputStream IS = null;
 
+        if (!PaneRegAuth.isDisable()) {
+            HostName = HostNameField.getText();
+            HostNameField.setDisable(true);
+        }
+
         try {
-            MainSocket = new Socket(HostName, 10001);
+            SocketAddress SockAddr = new InetSocketAddress(InetAddress.getByName(HostName), 10001);
+
+            MainSocket = new Socket();
+
+            MainSocket.connect(SockAddr, 0);
 
             OS = new ObjectOutputStream(MainSocket.getOutputStream());
 
-            OS.writeObject(ServiceID);
+            OS.writeObject((ServiceID != 0)?ServiceID:TFieldPORT.getText());
 
-            if (ServiceID != -5)
+            if (ServiceID < 0 && ServiceID > -5)
                 IS = new ObjectInputStream(MainSocket.getInputStream());
 
             switch (ServiceID) {
@@ -224,6 +231,9 @@ public class Controller {
             }
         } catch (IOException IOEx) {
             System.out.println(IOEx.getMessage());
+            HostName = null;
+            HostNameField.setDisable(false);
+
             return;
         } finally {
             try {
@@ -262,9 +272,6 @@ public class Controller {
     }
 
     private void Auth(ObjectOutputStream OS, ObjectInputStream IS) {
-        HostName = HostNameField.getText();
-        HostNameField.setDisable(true);
-
         LValidate.setText("");
 
         try {
@@ -481,8 +488,6 @@ public class Controller {
 
         try {
             OS.writeObject(LNickname.getText());
-
-            OS.close();
         } catch (IOException IOEx) {
             System.out.println(IOEx.getMessage());
         }
@@ -526,6 +531,10 @@ public class Controller {
         MainMethod(-5);
     }
 
+    @FXML
+    private void btnConnDisconn() {
+        MainMethod(0);
+    }
 
     @FXML
     private void CancelRegistration() {
@@ -563,9 +572,8 @@ public class Controller {
         TFieldValidCode.setText("");
         CancelRegistration.setVisible(false);
     }
-
-    private boolean ConnectionToServer() {
-
+    /*
+    private boolean ConnectionToServer(ObjectOutputStream OS) {
         int Port;
 
         try {
@@ -577,16 +585,8 @@ public class Controller {
 
         if (Port  > 10001 &&
             Port <= 65000) {
-            try {
-                Socket MainSocket = new Socket(HostName, 10001);
-
-                ObjectOutputStream OStream = new ObjectOutputStream(MainSocket.getOutputStream());
-
-                OStream.writeObject(Port);
-
-                OStream.close();
-
-                MainSocket.close();
+            try { // delete
+                OS.writeObject(Port);
             } catch (Exception Ex) {
                 System.out.println("Not found server! " + Ex);
                 return false;
@@ -598,7 +598,7 @@ public class Controller {
             return false;
 
     }
-
+    */
     private boolean Prepare() {
         try {
             ClientObj = new NcoNClient(InetAddress.getByName(HostName), Integer.valueOf(TFieldPORT.getText()));
@@ -610,8 +610,7 @@ public class Controller {
     }
 
     private void GetConnect() {
-        ConnectionToServer();
-
+        //ConnectionToServer(OS); // edit or delete ?
         if (!Prepare())
             return;
 
@@ -677,7 +676,6 @@ public class Controller {
         NeedClose = true;
     }
 
-    @FXML
     private void ConnDisconn() {
         if (Connectflag) {
             GetConnect();

@@ -129,7 +129,7 @@
                                     <Font name="DeusEx" size="14.0" />
                                  </font>
                               </Label>
-                              <Button layoutX="415.0" layoutY="150.0" mnemonicParsing="false" onAction="#ConnDisconn" prefHeight="41.0" prefWidth="137.0" text="Change status" AnchorPane.leftAnchor="415.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="150.0" />
+                              <Button layoutX="415.0" layoutY="150.0" mnemonicParsing="false" onAction="#btnConnDisconn" prefHeight="41.0" prefWidth="137.0" text="Change status" AnchorPane.leftAnchor="415.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="150.0" />
                               <TextArea fx:id="TAreaMessage" layoutX="27.0" layoutY="237.0" nodeOrientation="LEFT_TO_RIGHT" prefHeight="121.0" prefWidth="410.0" promptText="Write your message hire..." AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" />
                               <Label fx:id="StatusOn" layoutX="461.0" layoutY="40.0" prefHeight="19.0" prefWidth="100.0" styleClass="Header_2" text="OnLine" textFill="#00cfff">
                                  <font>
