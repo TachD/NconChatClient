@@ -101,7 +101,7 @@ public class Controller {
     private Label LRecoveryStatus;
 
     // Registred data
-    private String validMD5String;
+    private String validString;
 
     @FXML
     private Label ValidLabel;
@@ -304,10 +304,12 @@ public class Controller {
                 return;
             }
 
-            try {
-                if (Integer.valueOf(LoginData) == 0)
+            //try {
+                //if (Integer.valueOf(LoginData) == 0)
+                  if (LoginData.equals("0"))
                     LValidate.setText("Uncorrected Password and/or Login!");
-            } catch (NumberFormatException NFEx) {
+            //} catch (NumberFormatException NFEx) {
+                else {
                 try {
 
                     LNickname.setText(LoginData);
@@ -404,7 +406,7 @@ public class Controller {
                         StatusReg.setText("Email is already in use!");
 
             } catch (NumberFormatException NFEx) {
-                validMD5String = RegData;
+                validString = RegData;
 
                 RegNickname.setEditable(false);
                 RegPFieldOne.setEditable(false);
@@ -434,7 +436,7 @@ public class Controller {
         StatusReg.setText("");
 
         try {
-            if (!validMD5String.equals(getEncryptedString(TFieldValidCode.getText()))) {
+            if (!validString.equals(getEncryptedString(TFieldValidCode.getText()))) {
                 StatusReg.setText("Incorrect code!");
                 return;
             }
@@ -471,7 +473,6 @@ public class Controller {
             OS.writeObject(RegLname.getText());
             OS.writeObject(RegEmail.getText());
             OS.writeObject(DateofBirth);
-            ////////
 
             String LoginData;
 
@@ -551,7 +552,7 @@ public class Controller {
 
     @FXML
     private void CancelRegistration() {
-        validMD5String = null;
+        validString = null;
 
         StatusReg.setText("");
 
